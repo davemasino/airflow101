@@ -1,36 +1,41 @@
 """
 A simple Python DAG.
 """
-import logging
-import shutil
+from __future__ import print_function
+
 import time
-from datetime import datetime, timedelta
-from pprint import pprint
+from datetime import datetime
+from airflow.models import DAG
+from airflow.operators.python_operator import PythonOperator
 
-from airflow import DAG
-from airflow.decorators import task
-
-log = logging.getLogger(__name__)
-
-with DAG(
+dag = DAG(
     dag_id='simple_python',
     schedule_interval=None,
     start_date=datetime(2021, 1, 1),
     catchup=False,
     tags=['airflow101'],
-) as dag:
-    @task(task_id="hello_message")
-    def say_hello():
-        """Print a hello message"""
-        print("Hello, World!")
+)
 
-    hello_task = say_hello()
+def say_hello():
+    """Print a hello message"""
+    print("Hello, World!")
 
-    @task(task_id="go_to_sleep")
-    def sleep_for_1():
-        """Go to sleep"""
-        time.sleep(1)
 
-    sleeping_task = sleep_for_1()
+hello_task = PythonOperator(
+    task_id='hello_message',
+    python_callable=say_hello,
+    dag=dag,
+)
 
-    hello_task >> sleeping_task
+def sleep_for_1():
+    """Go to sleep"""
+    time.sleep(1)
+
+
+sleeping_task = PythonOperator(
+    task_id='go_to_sleep',
+    python_callable=sleep_for_1,
+    dag=dag,
+)
+
+hello_task >> sleeping_task
